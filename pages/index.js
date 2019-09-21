@@ -9,7 +9,7 @@ const LOCAL_STATE = gql`
 
 const AUDIOS_QUERY = gql`
   query AUDIOS_QUERY($contentLanguage: [Language!]) {
-    contentLanguage @client(always: true) @export(as: "contentLanguage")
+    # contentLanguage @client(always: true) @export(as: "contentLanguage")
     audios(where: { language_in: $contentLanguage }) {
       id
       title
@@ -22,9 +22,11 @@ const languages = ['ENGLISH', 'VIETNAMESE', 'CZECH', 'GERMAN'];
 
 const onClick = async ({ target: { id } }, client, contentLanguage) => {
   contentLanguage.push(id);
-  client.writeData({
+  await client.writeData({
     data: { contentLanguage },
   });
+  await client.query({ query: LOCAL_STATE });
+  client.query({ query: AUDIOS_QUERY, variables: { contentLanguage } });
 };
 
 const Home = () => (
@@ -33,7 +35,8 @@ const Home = () => (
       const contentLanguage = payload.data
         ? payload.data.contentLanguage
         : null;
-      if (contentLanguage)
+      if (contentLanguage) {
+        console.log(contentLanguage);
         return (
           <>
             <p>
@@ -44,7 +47,7 @@ const Home = () => (
             </p>
             <ApolloConsumer>
               {client => (
-                <Query query={AUDIOS_QUERY}>
+                <Query query={AUDIOS_QUERY} variables={{ contentLanguage }}>
                   {({ data, loading, error, variables }) => {
                     if (loading) return <div>loading...</div>;
                     if (error) return <div>error</div>;
@@ -59,9 +62,7 @@ const Home = () => (
                             type="button"
                             key={language}
                             id={language}
-                            onClick={e =>
-                              onClick(e, client, data.contentLanguage)
-                            }
+                            onClick={e => onClick(e, client, contentLanguage)}
                           >
                             Load {language}
                           </button>
@@ -81,6 +82,7 @@ const Home = () => (
             </ApolloConsumer>
           </>
         );
+      }
 
       return <div>loading...</div>;
     }}
