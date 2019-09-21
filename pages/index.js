@@ -9,7 +9,7 @@ const LOCAL_STATE = gql`
 
 const AUDIOS_QUERY = gql`
   query AUDIOS_QUERY($contentLanguage: [Language!]) {
-    contentLanguage @client(always: true) @export(as: "contentLanguage")
+    # contentLanguage @client(always: true) @export(as: "contentLanguage")
     audios(where: { language_in: $contentLanguage }) {
       id
       title
@@ -25,6 +25,8 @@ const onClick = async ({ target: { id } }, client, contentLanguage) => {
   await client.writeData({
     data: { contentLanguage },
   });
+  await client.query({ query: LOCAL_STATE });
+  client.query({ query: AUDIOS_QUERY, variables: { contentLanguage } });
 };
 
 const Home = () => (
@@ -45,7 +47,7 @@ const Home = () => (
             </p>
             <ApolloConsumer>
               {client => (
-                <Query query={AUDIOS_QUERY}>
+                <Query query={AUDIOS_QUERY} variables={{ contentLanguage }}>
                   {({ data, loading, error, variables }) => {
                     if (loading) return <div>loading...</div>;
                     if (error) return <div>error</div>;
